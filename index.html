@@ -2,159 +2,430 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Nổ Hũ NhanNTT</title>
+<title>TRẦN NGUYỄN THÀNH NHÂN</title>
 <style>
+*{box-sizing:border-box}
 body{
-  margin:0;
-  font-family:Arial;
-  background:radial-gradient(circle,#3a0000,#080000);
-  color:white;
-  text-align:center;
+ margin:0;font-family:Arial,sans-serif;
+ background:radial-gradient(circle at top,#52006a,#130018 45%,#050008);
+ color:white;text-align:center;overflow-x:hidden;
 }
-.box{
-  width:420px;
-  margin:40px auto;
-  padding:25px;
-  border-radius:20px;
-  background:linear-gradient(180deg,#8b0000,#240000);
-  box-shadow:0 0 30px gold;
+.hidden{display:none!important}
+.card{
+ max-width:1050px;margin:25px auto;padding:22px;border-radius:24px;
+ background:linear-gradient(145deg,#22002e,#09000f);
+ border:2px solid #ffcc00;box-shadow:0 0 30px #ff00ff, inset 0 0 25px #3b004a;
 }
+h1{color:#ffd700;text-shadow:0 0 18px #ff00ff;font-size:38px}
 input,button{
-  padding:12px;
-  margin:8px;
-  border-radius:8px;
-  border:none;
-  font-size:16px;
+ padding:12px 16px;margin:7px;border:none;border-radius:12px;font-size:16px;
 }
+input{background:#180020;color:white;border:1px solid #ffcc00}
 button{
-  background:linear-gradient(#ffd700,#ff8c00);
-  font-weight:bold;
-  cursor:pointer;
+ cursor:pointer;font-weight:bold;color:#260000;
+ background:linear-gradient(#fff36b,#ff9800);
+ box-shadow:0 0 15px #ffcc00;
 }
+button:hover{transform:scale(1.05)}
+.topbar{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.panel{
+ background:rgba(255,255,255,.08);padding:14px;border-radius:16px;
+ border:1px solid rgba(255,215,0,.4)
+}
+.money{color:#00ff99;font-size:22px;font-weight:bold}
+.jackpot{font-size:28px;color:#ffd700;text-shadow:0 0 15px red}
 .slot{
-  display:flex;
-  justify-content:center;
-  gap:15px;
-  margin:25px 0;
+ display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:25px auto;
+ max-width:620px;
 }
 .reel{
-  width:90px;
-  height:90px;
-  background:#111;
-  border:4px solid gold;
-  border-radius:15px;
-  font-size:55px;
-  line-height:90px;
-  box-shadow:0 0 15px gold;
+ height:105px;line-height:105px;font-size:58px;border-radius:18px;
+ background:linear-gradient(#290036,#070008);
+ border:3px solid #ffd700;
+ box-shadow:0 0 18px #ff00ff,inset 0 0 20px #000;
+ transition:.2s;
 }
-.hidden{display:none}
-.money{color:#00ff99;font-size:22px}
+.winCell{
+ animation:flash .45s infinite alternate;
+ background:linear-gradient(#fff700,#ff4d00)!important;
+}
+@keyframes flash{
+ from{transform:scale(1);box-shadow:0 0 15px #fff}
+ to{transform:scale(1.15);box-shadow:0 0 35px #00ffff}
+}
+@keyframes shake{
+ 0%,100%{transform:translateX(0)}
+ 25%{transform:translateX(-8px)}
+ 50%{transform:translateX(8px)}
+ 75%{transform:translateX(-8px)}
+}
+.shake{animation:shake .35s infinite}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.list{
+ text-align:left;max-height:220px;overflow:auto;font-size:14px;
+}
+.badge{
+ display:inline-block;padding:6px 10px;margin:3px;border-radius:30px;
+ background:#2e003d;border:1px solid #ffcc00;color:#ffd700;
+}
+.adminBox{
+ margin-top:15px;padding:15px;border-radius:18px;background:#12001a;border:1px solid #00ffff;
+}
 </style>
 </head>
 <body>
 
-<div class="box" id="loginBox">
-  <h1>🎰 NỔ HŨ CLUB</h1>
-  <input id="username" placeholder="Tên đăng nhập"><br>
-  <input id="password" type="password" placeholder="Mật khẩu"><br>
-  <button onclick="login()">Đăng nhập</button>
+<div class="card" id="authBox">
+ <h1>🎰 NHÂN NỔ HŨ VIP</h1>
+ <p>Demo offline - xu ảo lưu trên trình duyệt</p>
+
+ <input id="regUser" placeholder="Tên đăng ký">
+ <input id="regPass" type="password" placeholder="Mật khẩu">
+ <button onclick="register()">Đăng ký</button>
+ <br>
+
+ <input id="loginUser" placeholder="Tên đăng nhập">
+ <input id="loginPass" type="password" placeholder="Mật khẩu">
+ <button onclick="login()">Đăng nhập</button>
+
+ <p>Admin mặc định: <b>admin</b> / <b>123456</b></p>
 </div>
 
-<div class="box hidden" id="gameBox">
-  <h1>🎰 NỔ HŨ VIP</h1>
-  <p>Xin chào: <b id="userShow"></b></p>
-  <p class="money">Số dư: <span id="balance">100000</span> xu</p>
+<div class="card hidden" id="gameBox">
+ <div class="topbar">
+  <div class="panel">👤 User: <b id="currentUser"></b></div>
+  <div class="panel money">💰 Số dư: <span id="balance">0</span> xu</div>
+  <div class="panel jackpot">🏆 Hũ: <span id="jackpot">0</span> xu</div>
+  <div class="panel"><button onclick="logout()">Đăng xuất</button></div>
+ </div>
 
-  <div class="slot">
-    <div class="reel" id="r1">🍒</div>
-    <div class="reel" id="r2">🍋</div>
-    <div class="reel" id="r3">🔔</div>
+ <h1>💎 NEON JACKPOT 💎</h1>
+
+ <div class="slot" id="slot"></div>
+
+ <div>
+  <input id="bet" type="number" value="10000" min="1000">
+  <button onclick="spin()">QUAY NGAY</button>
+ </div>
+
+ <h2 id="result"></h2>
+
+ <div class="grid2">
+  <div class="panel">
+   <h3>🔥 Lịch sử 20 ván</h3>
+   <div class="list" id="history"></div>
   </div>
 
-  <input id="bet" type="number" value="10000" min="1000">
-  <br>
-  <button onclick="spin()">QUAY</button>
-  <button onclick="logout()">Đăng xuất</button>
+  <div class="panel">
+   <h3>🏅 Top thắng lớn</h3>
+   <div class="list" id="topWins"></div>
+  </div>
+ </div>
 
-  <h2 id="result"></h2>
+ <div class="panel" style="margin-top:15px">
+  <h3>👥 Người chơi đang thắng</h3>
+  <div id="fakePlayers"></div>
+ </div>
+
+ <div class="adminBox hidden" id="adminPanel">
+  <h2>🛠 ADMIN PANEL</h2>
+  <p>Xem user và cộng tiền ảo</p>
+  <div id="userList" class="list"></div>
+ </div>
 </div>
 
 <script>
-let balance = 100000;
-let symbols = ["🍒","🍋","🔔","⭐","💎","7️⃣"];
+let symbols=["🍒","🍋","🍉","🍇","🔔","⭐","💎","👑","7️⃣","🐉"];
+let currentUser=null;
+let spinning=false;
+
+const defaultJackpot=500000;
+const slot=document.getElementById("slot");
+
+let payLines=[
+[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],
+[0,6,12,8,4],[10,6,2,8,14],
+[0,1,7,3,4],[10,11,7,13,14],
+[5,1,2,3,9],[5,11,12,13,9],
+[0,6,7,8,4],[10,6,7,8,14],
+[0,6,2,8,4],[10,6,12,8,14],
+[5,6,2,8,9],[5,6,12,8,9],
+[0,1,7,13,14],[10,11,7,3,4],
+[0,6,12,13,14],[10,6,2,3,4],
+[5,1,7,13,9],[5,11,7,3,9],
+[0,1,2,8,14],[10,11,12,8,4],
+[0,6,7,8,14],[10,6,7,8,4]
+];
+
+function loadUsers(){
+ let users=JSON.parse(localStorage.getItem("users")||"{}");
+ if(!users.admin){
+  users.admin={pass:"123456",balance:999999999,isAdmin:true};
+  localStorage.setItem("users",JSON.stringify(users));
+ }
+ return users;
+}
+
+function saveUsers(users){
+ localStorage.setItem("users",JSON.stringify(users));
+}
+
+function getJackpot(){
+ let jp=Number(localStorage.getItem("jackpot")||defaultJackpot);
+ return jp;
+}
+
+function setJackpot(v){
+ localStorage.setItem("jackpot",v);
+ document.getElementById("jackpot").innerText=v.toLocaleString();
+}
+
+function register(){
+ let u=regUser.value.trim();
+ let p=regPass.value.trim();
+ if(!u||!p)return alert("Nhập đủ tài khoản và mật khẩu");
+
+ let users=loadUsers();
+ if(users[u])return alert("Tài khoản đã tồn tại");
+
+ users[u]={pass:p,balance:100000,isAdmin:false};
+ saveUsers(users);
+ alert("Đăng ký thành công, được tặng 100.000 xu");
+}
 
 function login(){
-  let user = document.getElementById("username").value;
-  let pass = document.getElementById("password").value;
+ let u=loginUser.value.trim();
+ let p=loginPass.value.trim();
+ let users=loadUsers();
 
-  if(user === "" || pass === ""){
-    alert("Vui lòng nhập tài khoản và mật khẩu");
-    return;
-  }
+ if(!users[u]||users[u].pass!==p)return alert("Sai tài khoản hoặc mật khẩu");
 
-  document.getElementById("loginBox").classList.add("hidden");
-  document.getElementById("gameBox").classList.remove("hidden");
-  document.getElementById("userShow").innerText = user;
+ currentUser=u;
+ authBox.classList.add("hidden");
+ gameBox.classList.remove("hidden");
+ currentUser.innerText=u;
+
+ initSlot();
+ updateUI();
+
+ if(users[u].isAdmin){
+  adminPanel.classList.remove("hidden");
+  renderAdmin();
+ }else{
+  adminPanel.classList.add("hidden");
+ }
 }
 
 function logout(){
-  document.getElementById("gameBox").classList.add("hidden");
-  document.getElementById("loginBox").classList.remove("hidden");
+ currentUser=null;
+ gameBox.classList.add("hidden");
+ authBox.classList.remove("hidden");
 }
 
-function spin(){
-  let bet = Number(document.getElementById("bet").value);
-
-  if(bet <= 0 || bet > balance){
-    alert("Tiền cược không hợp lệ");
-    return;
-  }
-
-  balance -= bet;
-  updateMoney();
-
-  let count = 0;
-  let timer = setInterval(() => {
-    document.getElementById("r1").innerText = randomSymbol();
-    document.getElementById("r2").innerText = randomSymbol();
-    document.getElementById("r3").innerText = randomSymbol();
-    count++;
-
-    if(count > 20){
-      clearInterval(timer);
-      checkWin(bet);
-    }
-  },100);
+function initSlot(){
+ slot.innerHTML="";
+ for(let i=0;i<15;i++){
+  let div=document.createElement("div");
+  div.className="reel";
+  div.id="cell"+i;
+  div.innerText=randomSymbol();
+  slot.appendChild(div);
+ }
 }
 
 function randomSymbol(){
-  return symbols[Math.floor(Math.random() * symbols.length)];
+ return symbols[Math.floor(Math.random()*symbols.length)];
 }
 
-function checkWin(bet){
-  let a = document.getElementById("r1").innerText;
-  let b = document.getElementById("r2").innerText;
-  let c = document.getElementById("r3").innerText;
-  let result = document.getElementById("result");
+function updateUI(){
+ let users=loadUsers();
+ document.getElementById("currentUser").innerText=currentUser;
+ balance.innerText=users[currentUser].balance.toLocaleString();
+ setJackpot(getJackpot());
+ renderTopWins();
+}
 
-  if(a === b && b === c){
-    let win = bet * 10;
-    balance += win;
-    result.innerText = "🎉 NỔ HŨ! Thắng " + win + " xu";
-  }else if(a === b || b === c || a === c){
-    let win = bet * 2;
-    balance += win;
-    result.innerText = "✨ Thắng nhỏ " + win + " xu";
+function spin(){
+ if(spinning)return;
+ let users=loadUsers();
+ let betMoney=Number(bet.value);
+
+ if(betMoney<1000)return alert("Cược tối thiểu 1.000 xu");
+ if(betMoney>users[currentUser].balance)return alert("Không đủ xu");
+
+ spinning=true;
+ result.innerText="Đang quay...";
+ clearWin();
+
+ users[currentUser].balance-=betMoney;
+ saveUsers(users);
+
+ setJackpot(getJackpot()+Math.floor(betMoney*0.15));
+ updateUI();
+
+ playSpinSound();
+
+ let count=0;
+ let timer=setInterval(()=>{
+  for(let i=0;i<15;i++){
+   document.getElementById("cell"+i).innerText=randomSymbol();
+  }
+  count++;
+
+  if(count>28){
+   clearInterval(timer);
+   checkResult(betMoney);
+   spinning=false;
+  }
+ },80);
+}
+
+function checkResult(betMoney){
+ let arr=[];
+ for(let i=0;i<15;i++)arr.push(document.getElementById("cell"+i).innerText);
+
+ let totalWin=0;
+ let winLines=[];
+
+ payLines.forEach(line=>{
+  let first=arr[line[0]];
+  let same=line.every(i=>arr[i]===first);
+  if(same){
+   let multi=5;
+   if(first==="💎")multi=15;
+   if(first==="👑")multi=25;
+   if(first==="7️⃣")multi=40;
+   if(first==="🐉")multi=80;
+   totalWin+=betMoney*multi;
+   winLines.push(line);
+  }
+ });
+
+ let users=loadUsers();
+
+ if(totalWin>0){
+  users[currentUser].balance+=totalWin;
+
+  winLines.flat().forEach(i=>{
+   document.getElementById("cell"+i).classList.add("winCell");
+  });
+
+  slot.classList.add("shake");
+  setTimeout(()=>slot.classList.remove("shake"),2500);
+
+  playWinSound();
+
+  if(totalWin>=betMoney*80){
+   let jp=getJackpot();
+   users[currentUser].balance+=jp;
+   result.innerText="🐉 SIÊU NỔ HŨ! Thắng "+(totalWin+jp).toLocaleString()+" xu";
+   addTopWin(currentUser,totalWin+jp);
+   setJackpot(defaultJackpot);
   }else{
-    result.innerText = "😢 Chúc may mắn lần sau";
+   result.innerText="🎉 THẮNG "+totalWin.toLocaleString()+" xu";
+   addTopWin(currentUser,totalWin);
   }
 
-  updateMoney();
+  addHistory("✅ Thắng +" + totalWin.toLocaleString()+" xu");
+ }else{
+  result.innerText="❌ Chưa trúng, thử lại nhé";
+  addHistory("❌ Thua -" + betMoney.toLocaleString()+" xu");
+ }
+
+ saveUsers(users);
+ updateUI();
 }
 
-function updateMoney(){
-  document.getElementById("balance").innerText = balance;
+function clearWin(){
+ for(let i=0;i<15;i++){
+  document.getElementById("cell"+i)?.classList.remove("winCell");
+ }
 }
+
+function addHistory(text){
+ let h=JSON.parse(localStorage.getItem("history")||"[]");
+ h.unshift(new Date().toLocaleTimeString()+" - "+text);
+ h=h.slice(0,20);
+ localStorage.setItem("history",JSON.stringify(h));
+ history.innerHTML=h.map(x=>"<div class='badge'>"+x+"</div>").join("<br>");
+}
+
+function addTopWin(user,amount){
+ let t=JSON.parse(localStorage.getItem("topWins")||"[]");
+ t.push({user,amount,time:new Date().toLocaleString()});
+ t.sort((a,b)=>b.amount-a.amount);
+ t=t.slice(0,10);
+ localStorage.setItem("topWins",JSON.stringify(t));
+}
+
+function renderTopWins(){
+ let t=JSON.parse(localStorage.getItem("topWins")||"[]");
+ topWins.innerHTML=t.map((x,i)=>
+  `<div class="badge">${i+1}. ${x.user} thắng ${x.amount.toLocaleString()} xu</div>`
+ ).join("<br>");
+}
+
+function renderAdmin(){
+ let users=loadUsers();
+ userList.innerHTML="";
+ Object.keys(users).forEach(u=>{
+  userList.innerHTML+=`
+   <div class="badge">
+    ${u} - ${users[u].balance.toLocaleString()} xu
+    <input id="add_${u}" type="number" placeholder="Số xu" style="width:110px">
+    <button onclick="addMoney('${u}')">Cộng</button>
+   </div><br>`;
+ });
+}
+
+function addMoney(u){
+ let money=Number(document.getElementById("add_"+u).value);
+ if(money<=0)return alert("Nhập số xu cần cộng");
+ let users=loadUsers();
+ users[u].balance+=money;
+ saveUsers(users);
+ renderAdmin();
+ updateUI();
+ alert("Đã cộng tiền cho "+u);
+}
+
+function playSpinSound(){
+ let ctx=new AudioContext();
+ let osc=ctx.createOscillator();
+ let gain=ctx.createGain();
+ osc.frequency.value=180;
+ osc.type="sawtooth";
+ osc.connect(gain);
+ gain.connect(ctx.destination);
+ gain.gain.value=0.05;
+ osc.start();
+ setTimeout(()=>{osc.stop();ctx.close()},600);
+}
+
+function playWinSound(){
+ let ctx=new AudioContext();
+ [400,600,800,1000].forEach((f,i)=>{
+  let osc=ctx.createOscillator();
+  let gain=ctx.createGain();
+  osc.frequency.value=f;
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  gain.gain.value=0.08;
+  osc.start(ctx.currentTime+i*0.15);
+  osc.stop(ctx.currentTime+i*0.15+0.12);
+ });
+ setTimeout(()=>ctx.close(),1200);
+}
+
+const fakeNames=["Minh","Tuấn","Hùng","Long","Nam","Đức","Linh","Hà","Khoa"];
+setInterval(()=>{
+ let name=fakeNames[Math.floor(Math.random()*fakeNames.length)];
+ let money=Math.floor(Math.random()*9000000)+100000;
+ fakePlayers.innerHTML=`🎉 ${name} vừa thắng <b>${money.toLocaleString()}</b> xu`;
+},3500);
+
+loadUsers();
+setJackpot(getJackpot());
 </script>
 
 </body>
