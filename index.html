@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>Tài Xỉu Giải Trí</title>
-
 <style>
 body{
     margin:0;
@@ -12,12 +11,6 @@ body{
     color:white;
     text-align:center;
 }
-
-h1{
-    color:gold;
-    text-shadow:0 0 15px red;
-}
-
 .game{
     max-width:900px;
     margin:20px auto;
@@ -25,21 +18,15 @@ h1{
     border:3px solid gold;
     border-radius:20px;
     background:#1b1b1b;
-    box-shadow:0 0 30px #000;
 }
-
-.money{
-    font-size:24px;
-    color:#00ff99;
-}
-
+h1{color:gold}
+.money{font-size:24px;color:#00ff99}
 .table{
     display:flex;
     justify-content:center;
     gap:30px;
     margin:25px 0;
 }
-
 .bet{
     width:180px;
     padding:25px;
@@ -48,69 +35,15 @@ h1{
     cursor:pointer;
     border:3px solid gold;
     background:#8b0000;
-    transition:0.3s;
 }
-
-.bet:hover{
-    transform:scale(1.08);
-    background:#b30000;
-}
-
-.selected{
-    background:gold;
-    color:#8b0000;
-}
-
-.dish{
-    width:260px;
-    height:260px;
-    margin:20px auto;
-    border-radius:50%;
-    background:radial-gradient(circle,#eee,#999);
-    position:relative;
-    box-shadow:0 0 25px #000;
-}
-
-.bowl{
-    width:220px;
-    height:130px;
-    background:linear-gradient(#5b2d12,#c47a2c);
-    border-radius:0 0 120px 120px;
-    position:absolute;
-    left:20px;
-    top:40px;
-    box-shadow:0 10px 20px #000;
-    z-index:2;
-}
-
-.shake{
-    animation:shake 0.1s infinite;
-}
-
-@keyframes shake{
-    0%{transform:translateX(-8px) rotate(-5deg);}
-    50%{transform:translateX(8px) rotate(5deg);}
-    100%{transform:translateX(-8px) rotate(-5deg);}
-}
-
-.dice{
-    position:absolute;
-    top:95px;
-    left:35px;
-    width:190px;
-    font-size:55px;
-    z-index:1;
-}
-
+.selected{background:gold;color:#8b0000}
 input{
     padding:12px;
     font-size:20px;
     width:150px;
     text-align:center;
     border-radius:10px;
-    border:none;
 }
-
 button{
     padding:14px 35px;
     font-size:22px;
@@ -121,17 +54,54 @@ button{
     color:#7a0000;
     font-weight:bold;
 }
-
-button:hover{
-    transform:scale(1.05);
+.dish{
+    width:280px;
+    height:280px;
+    margin:20px auto;
+    border-radius:50%;
+    background:radial-gradient(circle,#eee,#999);
+    position:relative;
+    box-shadow:0 0 25px #000;
+    overflow:hidden;
 }
-
+.dice{
+    position:absolute;
+    top:105px;
+    left:38px;
+    width:210px;
+    font-size:58px;
+    z-index:1;
+}
+.bowl{
+    width:230px;
+    height:140px;
+    background:linear-gradient(#5b2d12,#c47a2c);
+    border-radius:0 0 130px 130px;
+    position:absolute;
+    left:25px;
+    top:55px;
+    z-index:2;
+    cursor:grab;
+    box-shadow:0 10px 20px #000;
+    user-select:none;
+}
+.shake{
+    animation:shake 0.08s infinite;
+}
+@keyframes shake{
+    0%{transform:translateX(-8px) rotate(-5deg);}
+    50%{transform:translateX(8px) rotate(5deg);}
+    100%{transform:translateX(-8px) rotate(-5deg);}
+}
 #result{
-    font-size:30px;
+    font-size:28px;
     color:gold;
-    margin-top:20px;
+    margin-top:15px;
 }
-
+#hint{
+    color:#00ffff;
+    font-size:20px;
+}
 .history{
     margin-top:20px;
     color:#ccc;
@@ -144,9 +114,7 @@ button:hover{
 <div class="game">
     <h1>🎲 TÀI XỈU GIẢI TRÍ 🎲</h1>
 
-    <div class="money">
-        Tiền ảo: <span id="money">1000</span> xu
-    </div>
+    <div class="money">Tiền ảo: <span id="money">1000</span> xu</div>
 
     <div class="table">
         <div class="bet" id="tai" onclick="chon('tai')">TÀI<br>11 - 18</div>
@@ -156,13 +124,15 @@ button:hover{
     <p>Nhập số xu muốn đặt:</p>
     <input type="number" id="betMoney" value="100" min="10">
 
-    <div class="dish">
-        <div class="dice" id="dice">⚀ ⚀ ⚀</div>
-        <div class="bowl" id="bowl"></div>
-    </div>
-
+    <br><br>
     <button onclick="lac()">LẮC CHÉN</button>
 
+    <div class="dish">
+        <div class="dice" id="dice">⚀ ⚀ ⚀</div>
+        <div class="bowl" id="bowl"> </div>
+    </div>
+
+    <div id="hint"></div>
     <div id="result"></div>
     <div class="history" id="history">Lịch sử: </div>
 </div>
@@ -171,15 +141,19 @@ button:hover{
 let money = 1000;
 let choice = "";
 let historyText = "";
+let canOpen = false;
+let isDragging = false;
+let startY = 0;
+let bowlTop = 55;
+let currentResult = "";
 
 const diceIcons = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+const bowl = document.getElementById("bowl");
 
 function chon(type){
     choice = type;
-
     document.getElementById("tai").classList.remove("selected");
     document.getElementById("xiu").classList.remove("selected");
-
     document.getElementById(type).classList.add("selected");
 }
 
@@ -196,10 +170,11 @@ function lac(){
         return;
     }
 
-    let bowl = document.getElementById("bowl");
-    let result = document.getElementById("result");
-
-    result.innerHTML = "Đang lắc...";
+    canOpen = false;
+    currentResult = "";
+    bowl.style.top = "55px";
+    document.getElementById("result").innerHTML = "";
+    document.getElementById("hint").innerHTML = "Đang lắc chén...";
 
     bowl.classList.add("shake");
 
@@ -219,25 +194,58 @@ function lac(){
 
         if(choice === kq){
             money += bet;
-            result.innerHTML = "🎉 Ra " + textKq + " - Tổng " + sum + " | Bạn thắng +" + bet + " xu";
+            currentResult = "🎉 Ra " + textKq + " - Tổng " + sum + " | Bạn thắng +" + bet + " xu";
         }else{
             money -= bet;
-            result.innerHTML = "😢 Ra " + textKq + " - Tổng " + sum + " | Bạn thua -" + bet + " xu";
+            currentResult = "😢 Ra " + textKq + " - Tổng " + sum + " | Bạn thua -" + bet + " xu";
         }
 
         document.getElementById("money").innerHTML = money;
-
         historyText = textKq + " (" + sum + ") | " + historyText;
         document.getElementById("history").innerHTML = "Lịch sử: " + historyText;
 
-        if(money <= 0){
-            alert("Bạn đã hết tiền ảo! Game sẽ reset.");
-            money = 1000;
-            document.getElementById("money").innerHTML = money;
-        }
+        canOpen = true;
+        document.getElementById("hint").innerHTML = "Kéo chén lên để mở kết quả";
 
     }, 1500);
 }
+
+bowl.addEventListener("mousedown", function(e){
+    if(!canOpen) return;
+    isDragging = true;
+    startY = e.clientY;
+    bowlTop = parseInt(bowl.style.top) || 55;
+});
+
+document.addEventListener("mousemove", function(e){
+    if(!isDragging) return;
+
+    let move = e.clientY - startY;
+    let newTop = bowlTop + move;
+
+    if(newTop < -90) newTop = -90;
+    if(newTop > 55) newTop = 55;
+
+    bowl.style.top = newTop + "px";
+
+    if(newTop <= -60){
+        document.getElementById("result").innerHTML = currentResult;
+        document.getElementById("hint").innerHTML = "Đã mở chén!";
+        canOpen = false;
+
+        if(money <= 0){
+            setTimeout(function(){
+                alert("Bạn đã hết tiền ảo! Game reset lại 1000 xu.");
+                money = 1000;
+                document.getElementById("money").innerHTML = money;
+            }, 500);
+        }
+    }
+});
+
+document.addEventListener("mouseup", function(){
+    isDragging = false;
+});
 </script>
 
 </body>
