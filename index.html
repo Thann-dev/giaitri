@@ -11,16 +11,41 @@ body{
     color:white;
     text-align:center;
 }
-.game{
-    max-width:900px;
-    margin:20px auto;
-    padding:20px;
+.box,.game{
+    max-width:950px;
+    margin:25px auto;
+    padding:25px;
     border:3px solid gold;
     border-radius:20px;
     background:#1b1b1b;
 }
 h1{color:gold}
-.money{font-size:24px;color:#00ff99}
+input{
+    padding:12px;
+    font-size:18px;
+    border-radius:10px;
+    border:none;
+    margin:8px;
+}
+button{
+    padding:12px 25px;
+    font-size:18px;
+    border:none;
+    border-radius:10px;
+    background:gold;
+    color:#7a0000;
+    font-weight:bold;
+    cursor:pointer;
+}
+.money{
+    font-size:24px;
+    color:#00ff99;
+}
+.timer{
+    font-size:35px;
+    color:#00ffff;
+    margin:15px;
+}
 .table{
     display:flex;
     justify-content:center;
@@ -28,7 +53,7 @@ h1{color:gold}
     margin:25px 0;
 }
 .bet{
-    width:180px;
+    width:200px;
     padding:25px;
     border-radius:20px;
     font-size:30px;
@@ -36,23 +61,13 @@ h1{color:gold}
     border:3px solid gold;
     background:#8b0000;
 }
-.selected{background:gold;color:#8b0000}
-input{
-    padding:12px;
-    font-size:20px;
-    width:150px;
-    text-align:center;
-    border-radius:10px;
-}
-button{
-    padding:14px 35px;
-    font-size:22px;
-    border:none;
-    border-radius:12px;
-    cursor:pointer;
+.selected{
     background:gold;
-    color:#7a0000;
-    font-weight:bold;
+    color:#8b0000;
+}
+.disabled{
+    opacity:0.5;
+    pointer-events:none;
 }
 .dish{
     width:280px;
@@ -61,7 +76,6 @@ button{
     border-radius:50%;
     background:radial-gradient(circle,#eee,#999);
     position:relative;
-    box-shadow:0 0 25px #000;
     overflow:hidden;
 }
 .dice{
@@ -70,7 +84,6 @@ button{
     left:38px;
     width:210px;
     font-size:58px;
-    z-index:1;
 }
 .bowl{
     width:230px;
@@ -82,21 +95,18 @@ button{
     top:55px;
     z-index:2;
     cursor:grab;
-    box-shadow:0 10px 20px #000;
-    user-select:none;
 }
 .shake{
     animation:shake 0.08s infinite;
 }
 @keyframes shake{
-    0%{transform:translateX(-8px) rotate(-5deg);}
-    50%{transform:translateX(8px) rotate(5deg);}
-    100%{transform:translateX(-8px) rotate(-5deg);}
+    0%{transform:translateX(-8px) rotate(-5deg)}
+    50%{transform:translateX(8px) rotate(5deg)}
+    100%{transform:translateX(-8px) rotate(-5deg)}
 }
 #result{
-    font-size:28px;
+    font-size:26px;
     color:gold;
-    margin-top:15px;
 }
 #hint{
     color:#00ffff;
@@ -111,25 +121,49 @@ button{
 
 <body>
 
-<div class="game">
+<div class="box" id="loginBox">
     <h1>🎲 TÀI XỈU GIẢI TRÍ 🎲</h1>
 
+    <h2>Đăng nhập</h2>
+    <input id="loginUser" placeholder="Tên đăng nhập">
+    <input id="loginPass" type="password" placeholder="Mật khẩu">
+    <br>
+    <button onclick="dangNhap()">Đăng nhập</button>
+
+    <h2>Đăng ký</h2>
+    <input id="regUser" placeholder="Tên đăng nhập mới">
+    <input id="regPass" type="password" placeholder="Mật khẩu mới">
+    <br>
+    <button onclick="dangKy()">Đăng ký</button>
+
+    <p id="loginMsg"></p>
+</div>
+
+<div class="game" id="gameBox" style="display:none">
+    <h1>🎲 TÀI XỈU GIẢI TRÍ 🎲</h1>
+
+    <p>Người chơi: <b id="playerName"></b></p>
     <div class="money">Tiền ảo: <span id="money">1000</span> xu</div>
 
-    <div class="table">
+    <div class="timer">
+        Thời gian đặt cược: <span id="time">30</span>s
+    </div>
+
+    <div class="table" id="betArea">
         <div class="bet" id="tai" onclick="chon('tai')">TÀI<br>11 - 18</div>
         <div class="bet" id="xiu" onclick="chon('xiu')">XỈU<br>3 - 10</div>
     </div>
 
     <p>Nhập số xu muốn đặt:</p>
     <input type="number" id="betMoney" value="100" min="10">
-
     <br><br>
-    <button onclick="lac()">LẮC CHÉN</button>
+
+    <button onclick="datCuoc()">ĐẶT CƯỢC</button>
+    <button onclick="dangXuat()">Đăng xuất</button>
 
     <div class="dish">
         <div class="dice" id="dice">⚀ ⚀ ⚀</div>
-        <div class="bowl" id="bowl"> </div>
+        <div class="bowl" id="bowl"></div>
     </div>
 
     <div id="hint"></div>
@@ -138,9 +172,15 @@ button{
 </div>
 
 <script>
+let currentUser = "";
 let money = 1000;
 let choice = "";
+let daDatCuoc = false;
+let tienDaDat = 0;
+let luaChonDaDat = "";
 let historyText = "";
+let timeLeft = 30;
+let timer;
 let canOpen = false;
 let isDragging = false;
 let startY = 0;
@@ -150,15 +190,86 @@ let currentResult = "";
 const diceIcons = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
 const bowl = document.getElementById("bowl");
 
+function getUsers(){
+    return JSON.parse(localStorage.getItem("users") || "{}");
+}
+
+function saveUsers(users){
+    localStorage.setItem("users", JSON.stringify(users));
+}
+
+function dangKy(){
+    let user = regUser.value.trim();
+    let pass = regPass.value.trim();
+    let users = getUsers();
+
+    if(user === "" || pass === ""){
+        loginMsg.innerHTML = "Vui lòng nhập đủ thông tin!";
+        return;
+    }
+
+    if(users[user]){
+        loginMsg.innerHTML = "Tài khoản đã tồn tại!";
+        return;
+    }
+
+    users[user] = { password: pass, money: 1000, history: "" };
+    saveUsers(users);
+    loginMsg.innerHTML = "Đăng ký thành công, hãy đăng nhập!";
+}
+
+function dangNhap(){
+    let user = loginUser.value.trim();
+    let pass = loginPass.value.trim();
+    let users = getUsers();
+
+    if(!users[user] || users[user].password !== pass){
+        loginMsg.innerHTML = "Sai tài khoản hoặc mật khẩu!";
+        return;
+    }
+
+    currentUser = user;
+    money = users[user].money;
+    historyText = users[user].history;
+
+    playerName.innerHTML = currentUser;
+    document.getElementById("money").innerHTML = money;
+    history.innerHTML = "Lịch sử: " + historyText;
+
+    loginBox.style.display = "none";
+    gameBox.style.display = "block";
+
+    batDauVanMoi();
+}
+
+function luuTaiKhoan(){
+    let users = getUsers();
+    users[currentUser].money = money;
+    users[currentUser].history = historyText;
+    saveUsers(users);
+}
+
+function dangXuat(){
+    luuTaiKhoan();
+    location.reload();
+}
+
 function chon(type){
+    if(daDatCuoc) return;
+
     choice = type;
-    document.getElementById("tai").classList.remove("selected");
-    document.getElementById("xiu").classList.remove("selected");
+    tai.classList.remove("selected");
+    xiu.classList.remove("selected");
     document.getElementById(type).classList.add("selected");
 }
 
-function lac(){
-    let bet = Number(document.getElementById("betMoney").value);
+function datCuoc(){
+    let bet = Number(betMoney.value);
+
+    if(daDatCuoc){
+        alert("Bạn đã đặt cược ván này rồi!");
+        return;
+    }
 
     if(choice === ""){
         alert("Bạn chưa chọn Tài hoặc Xỉu!");
@@ -170,11 +281,54 @@ function lac(){
         return;
     }
 
+    daDatCuoc = true;
+    tienDaDat = bet;
+    luaChonDaDat = choice;
+
+    result.innerHTML = "Bạn đã đặt " + bet + " xu vào " + 
+        (choice === "tai" ? "TÀI" : "XỈU") + ". Chờ hết 30 giây để mở bát.";
+}
+
+function batDauVanMoi(){
+    clearInterval(timer);
+
+    timeLeft = 30;
+    choice = "";
+    daDatCuoc = false;
+    tienDaDat = 0;
+    luaChonDaDat = "";
     canOpen = false;
-    currentResult = "";
+
+    time.innerHTML = timeLeft;
+    result.innerHTML = "";
+    hint.innerHTML = "Hãy chọn Tài/Xỉu và đặt cược.";
+    dice.innerHTML = "⚀ ⚀ ⚀";
     bowl.style.top = "55px";
-    document.getElementById("result").innerHTML = "";
-    document.getElementById("hint").innerHTML = "Đang lắc chén...";
+
+    tai.classList.remove("selected");
+    xiu.classList.remove("selected");
+
+    timer = setInterval(function(){
+        timeLeft--;
+        time.innerHTML = timeLeft;
+
+        if(timeLeft <= 0){
+            clearInterval(timer);
+            hetGioLacChen();
+        }
+    }, 1000);
+}
+
+function hetGioLacChen(){
+    if(!daDatCuoc){
+        result.innerHTML = "Bạn chưa đặt cược, ván này bỏ qua.";
+        hint.innerHTML = "Chuẩn bị ván mới...";
+        setTimeout(batDauVanMoi, 3000);
+        return;
+    }
+
+    hint.innerHTML = "Hết giờ! Đang lắc chén...";
+    result.innerHTML = "";
 
     bowl.classList.add("shake");
 
@@ -184,28 +338,30 @@ function lac(){
         let d1 = Math.floor(Math.random()*6)+1;
         let d2 = Math.floor(Math.random()*6)+1;
         let d3 = Math.floor(Math.random()*6)+1;
-        let sum = d1 + d2 + d3;
+        let sum = d1+d2+d3;
 
-        document.getElementById("dice").innerHTML =
-            diceIcons[d1] + " " + diceIcons[d2] + " " + diceIcons[d3];
+        dice.innerHTML = diceIcons[d1]+" "+diceIcons[d2]+" "+diceIcons[d3];
 
         let kq = sum >= 11 ? "tai" : "xiu";
         let textKq = kq === "tai" ? "TÀI" : "XỈU";
 
-        if(choice === kq){
-            money += bet;
-            currentResult = "🎉 Ra " + textKq + " - Tổng " + sum + " | Bạn thắng +" + bet + " xu";
+        if(luaChonDaDat === kq){
+            money += tienDaDat;
+            currentResult = "🎉 Ra " + textKq + " - Tổng " + sum + 
+                " | Bạn thắng +" + tienDaDat + " xu";
         }else{
-            money -= bet;
-            currentResult = "😢 Ra " + textKq + " - Tổng " + sum + " | Bạn thua -" + bet + " xu";
+            money -= tienDaDat;
+            currentResult = "😢 Ra " + textKq + " - Tổng " + sum + 
+                " | Bạn thua -" + tienDaDat + " xu";
         }
 
         document.getElementById("money").innerHTML = money;
         historyText = textKq + " (" + sum + ") | " + historyText;
-        document.getElementById("history").innerHTML = "Lịch sử: " + historyText;
+        history.innerHTML = "Lịch sử: " + historyText;
+        luuTaiKhoan();
 
         canOpen = true;
-        document.getElementById("hint").innerHTML = "Kéo chén lên để mở kết quả";
+        hint.innerHTML = "Kéo chén lên để mở kết quả.";
 
     }, 1500);
 }
@@ -229,17 +385,21 @@ document.addEventListener("mousemove", function(e){
     bowl.style.top = newTop + "px";
 
     if(newTop <= -60){
-        document.getElementById("result").innerHTML = currentResult;
-        document.getElementById("hint").innerHTML = "Đã mở chén!";
+        result.innerHTML = currentResult;
+        hint.innerHTML = "Đã mở chén! Ván mới bắt đầu sau 5 giây.";
         canOpen = false;
+        isDragging = false;
 
         if(money <= 0){
             setTimeout(function(){
-                alert("Bạn đã hết tiền ảo! Game reset lại 1000 xu.");
+                alert("Bạn đã hết tiền ảo! Reset lại 1000 xu.");
                 money = 1000;
                 document.getElementById("money").innerHTML = money;
-            }, 500);
+                luuTaiKhoan();
+            },500);
         }
+
+        setTimeout(batDauVanMoi, 5000);
     }
 });
 
