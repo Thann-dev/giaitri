@@ -364,10 +364,8 @@ function datCuoc(){
     result.innerHTML="Bạn đã đặt "+bet+" xu vào "+(choice==="tai"?"TÀI":"XỈU");
 }
 function updateTotals(){
-    totalTaiEl=document.getElementById("totalTai");
-    totalXiuEl=document.getElementById("totalXiu");
-    totalTaiEl.innerHTML=totalTai;
-    totalXiuEl.innerHTML=totalXiu;
+    document.getElementById("totalTai").innerHTML = totalTai;
+    document.getElementById("totalXiu").innerHTML = totalXiu;
 }
 function fakeBet(){
     let name=names[Math.floor(Math.random()*names.length)];
