@@ -76,7 +76,7 @@ button:hover{transform:scale(1.05)}
 <body>
 
 <div class="card" id="authBox">
- <h1>🎰 NHÂN NỔ HŨ VIP</h1>
+ <h1>🎰 NỔ HŨ VIP</h1>
  <p>Demo offline - xu ảo lưu trên trình duyệt</p>
 
  <input id="regUser" placeholder="Tên đăng ký">
@@ -198,7 +198,7 @@ function login(){
  let p=loginPass.value.trim();
  let users=loadUsers();
 
- if(!users[u]||users[u].pass!==p)return alert("Sai tài khoản hoặc mật khẩu");
+ if(!users[u]||users[u].pass!==p)return alert("Tài khoản hoặc mật khẩu không đúng");
 
  currentUser=u;
  authBox.classList.add("hidden");
