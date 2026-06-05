@@ -104,7 +104,7 @@ button:hover{transform:scale(1.05)}
  <div class="slot" id="slot"></div>
 
  <div>
-  <input id="bet" type="number" value="10000" min="1000">
+  <input id="bet" type="number" value="1000000" min="1000">
   <button onclick="spin()">QUAY NGAY</button>
  </div>
 
@@ -281,27 +281,68 @@ function spin(){
 }
 
 function checkResult(betMoney){
- let arr=[];
- for(let i=0;i<15;i++)arr.push(document.getElementById("cell"+i).innerText);
-
- let totalWin=0;
- let winLines=[];
-
- payLines.forEach(line=>{
-  let first=arr[line[0]];
-  let same=line.every(i=>arr[i]===first);
-  if(same){
-   let multi=5;
-   if(first==="💎")multi=15;
-   if(first==="👑")multi=25;
-   if(first==="7️⃣")multi=40;
-   if(first==="🐉")multi=80;
-   totalWin+=betMoney*multi;
-   winLines.push(line);
-  }
- });
-
  let users=loadUsers();
+ let jackpotNow=getJackpot();
+
+ // Tỉ lệ theo tiền cược:
+ // Cược nhỏ: dễ thắng, có cơ hội nổ hũ cao hơn
+ // Cược vừa: thắng vừa phải
+ // Cược lớn: khó thắng, nếu thắng thì thắng ít hơn
+ let jackpotChance=0.001;
+ let winChance=0.12;
+ let minMulti=1.1;
+ let maxMulti=1.6;
+
+ if(betMoney<=100000){
+  jackpotChance=0.05;   // 5% nổ hũ khi cược nhỏ
+  winChance=0.65;       // 65% thắng thường
+  minMulti=2;
+  maxMulti=8;
+ }else if(betMoney<=1000000){
+  jackpotChance=0.01;   // 1% nổ hũ
+  winChance=0.32;       // 32% thắng thường
+  minMulti=1.5;
+  maxMulti=4;
+ }else{
+  jackpotChance=0.001;  // 0.1% nổ hũ khi cược lớn
+  winChance=0.12;       // 12% thắng thường
+  minMulti=1.1;
+  maxMulti=1.8;
+ }
+
+ let roll=Math.random();
+ let outcome="lose";
+ if(roll<jackpotChance){
+  outcome="jackpot";
+ }else if(roll<jackpotChance+winChance){
+  outcome="win";
+ }
+
+ let arr=[];
+ for(let i=0;i<15;i++)arr.push(randomSymbol());
+ let winLines=[];
+ let totalWin=0;
+
+ if(outcome==="jackpot"){
+  let line=payLines[Math.floor(Math.random()*payLines.length)];
+  line.forEach(i=>arr[i]="🐉");
+  winLines.push(line);
+  totalWin=betMoney*80;
+ }else if(outcome==="win"){
+  let line=payLines[Math.floor(Math.random()*payLines.length)];
+  let normalSymbols=["🍒","🍋","🍉","🍇","🔔","⭐","💎","👑","7️⃣"];
+  let sym=normalSymbols[Math.floor(Math.random()*normalSymbols.length)];
+  line.forEach(i=>arr[i]=sym);
+  winLines.push(line);
+
+  let multi=minMulti+Math.random()*(maxMulti-minMulti);
+  totalWin=Math.floor(betMoney*multi);
+ }
+
+ // Đẩy kết quả đã sắp xếp ra màn hình
+ for(let i=0;i<15;i++){
+  document.getElementById("cell"+i).innerText=arr[i];
+ }
 
  if(totalWin>0){
   users[currentUser].balance+=totalWin;
@@ -315,18 +356,18 @@ function checkResult(betMoney){
 
   playWinSound();
 
-  if(totalWin>=betMoney*80){
-   let jp=getJackpot();
-   users[currentUser].balance+=jp;
-   result.innerText="🐉 SIÊU NỔ HŨ! Thắng "+(totalWin+jp).toLocaleString()+" xu";
-   addTopWin(currentUser,totalWin+jp);
+  if(outcome==="jackpot"){
+   users[currentUser].balance+=jackpotNow;
+   let realWin=totalWin+jackpotNow;
+   result.innerText="🐉 SIÊU NỔ HŨ! Thắng "+realWin.toLocaleString()+" xu";
+   addTopWin(currentUser,realWin);
+   addHistory("🐉 Nổ hũ +" + realWin.toLocaleString()+" xu");
    setJackpot(defaultJackpot);
   }else{
    result.innerText="🎉 THẮNG "+totalWin.toLocaleString()+" xu";
    addTopWin(currentUser,totalWin);
+   addHistory("✅ Thắng +" + totalWin.toLocaleString()+" xu");
   }
-
-  addHistory("✅ Thắng +" + totalWin.toLocaleString()+" xu");
  }else{
   result.innerText="❌ Chưa trúng, thử lại nhé";
   addHistory("❌ Thua -" + betMoney.toLocaleString()+" xu");
@@ -335,7 +376,6 @@ function checkResult(betMoney){
  saveUsers(users);
  updateUI();
 }
-
 function clearWin(){
  for(let i=0;i<15;i++){
   document.getElementById("cell"+i)?.classList.remove("winCell");
