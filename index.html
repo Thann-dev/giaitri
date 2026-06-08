@@ -96,6 +96,7 @@ button:hover{transform:scale(1.05)}
   <div class="panel">👤 User: <b id="currentUser"></b></div>
   <div class="panel money">💰 Số dư: <span id="balance">0</span> xu</div>
   <div class="panel jackpot">🏆 Hũ: <span id="jackpot">0</span> xu</div>
+  <div class="panel"><button id="musicBtn" onclick="toggleBgMusic()">🔊 Nhạc nền: Bật</button></div>
   <div class="panel"><button onclick="logout()">Đăng xuất</button></div>
  </div>
 
@@ -106,7 +107,11 @@ button:hover{transform:scale(1.05)}
  <div>
   <input id="bet" type="number" value="1000000" min="1000">
   <button onclick="spin()">QUAY NGAY</button>
+  <button id="autoSpinBtn" onclick="toggleAutoSpin()">🔁 Tự động quay: Tắt</button>
  </div>
+ <p style="margin-top:4px;color:#ffd700;font-size:14px">
+  Bật tự động quay sẽ quay liên tục theo mức cược hiện tại, đến khi bấm tắt hoặc hết xu.
+ </p>
 
  <h2 id="result"></h2>
 
@@ -138,6 +143,8 @@ button:hover{transform:scale(1.05)}
 let symbols=["🍒","🍋","🍉","🍇","🔔","⭐","💎","👑","7️⃣","🐉"];
 let currentUser=null;
 let spinning=false;
+let autoSpin=false;
+let autoSpinTimer=null;
 
 const defaultJackpot=500000;
 const slot=document.getElementById("slot");
@@ -204,6 +211,7 @@ function login(){
  authBox.classList.add("hidden");
  gameBox.classList.remove("hidden");
  currentUser.innerText=u;
+ startBgMusic();
 
  initSlot();
  updateUI();
@@ -217,6 +225,8 @@ function login(){
 }
 
 function logout(){
+ stopAutoSpin();
+ stopBgMusic();
  currentUser=null;
  gameBox.classList.add("hidden");
  authBox.classList.remove("hidden");
@@ -250,11 +260,17 @@ function spin(){
  let users=loadUsers();
  let betMoney=Number(bet.value);
 
- if(betMoney<1000)return alert("Cược tối thiểu 1.000 xu");
- if(betMoney>users[currentUser].balance)return alert("Không đủ xu");
+ if(betMoney<1000){
+  stopAutoSpin();
+  return alert("Cược tối thiểu 1.000 xu");
+ }
+ if(betMoney>users[currentUser].balance){
+  stopAutoSpin();
+  return alert("Không đủ xu, tự động quay đã dừng");
+ }
 
  spinning=true;
- result.innerText="Đang quay...";
+ result.innerText=autoSpin ? "🔁 Đang tự động quay..." : "Đang quay...";
  clearWin();
 
  users[currentUser].balance-=betMoney;
@@ -276,6 +292,12 @@ function spin(){
    clearInterval(timer);
    checkResult(betMoney);
    spinning=false;
+
+   if(autoSpin){
+    autoSpinTimer=setTimeout(()=>{
+     if(autoSpin)spin();
+    },900);
+   }
   }
  },80);
 }
@@ -382,6 +404,44 @@ function clearWin(){
  }
 }
 
+function updateAutoSpinButton(){
+ let btn=document.getElementById("autoSpinBtn");
+ if(!btn)return;
+ btn.innerText=autoSpin ? "⏹ Tự động quay: Bật" : "🔁 Tự động quay: Tắt";
+}
+
+function toggleAutoSpin(){
+ if(autoSpin){
+  stopAutoSpin();
+  result.innerText="⏹ Đã tắt tự động quay";
+ }else{
+  startAutoSpin();
+ }
+}
+
+function startAutoSpin(){
+ let users=loadUsers();
+ let betMoney=Number(bet.value);
+
+ if(betMoney<1000)return alert("Cược tối thiểu 1.000 xu");
+ if(betMoney>users[currentUser].balance)return alert("Không đủ xu để bật tự động quay");
+
+ autoSpin=true;
+ updateAutoSpinButton();
+ result.innerText="🔁 Đã bật tự động quay";
+
+ if(!spinning)spin();
+}
+
+function stopAutoSpin(){
+ autoSpin=false;
+ if(autoSpinTimer){
+  clearTimeout(autoSpinTimer);
+  autoSpinTimer=null;
+ }
+ updateAutoSpinButton();
+}
+
 function addHistory(text){
  let h=JSON.parse(localStorage.getItem("history")||"[]");
  h.unshift(new Date().toLocaleTimeString()+" - "+text);
@@ -440,6 +500,63 @@ function playSpinSound(){
  gain.gain.value=0.05;
  osc.start();
  setTimeout(()=>{osc.stop();ctx.close()},600);
+}
+
+
+let bgCtx=null;
+let bgGain=null;
+let bgTimer=null;
+let bgMusicOn=true;
+let bgStep=0;
+const bgMelody=[196,247,294,330,294,247,220,247,196,247,330,392,330,294,247,220];
+
+function startBgMusic(){
+ if(!bgMusicOn || bgCtx)return;
+ try{
+  bgCtx=new AudioContext();
+  bgGain=bgCtx.createGain();
+  bgGain.gain.value=0.025;
+  bgGain.connect(bgCtx.destination);
+
+  bgTimer=setInterval(()=>{
+   if(!bgCtx)return;
+   let now=bgCtx.currentTime;
+   let osc=bgCtx.createOscillator();
+   let noteGain=bgCtx.createGain();
+
+   osc.type="triangle";
+   osc.frequency.value=bgMelody[bgStep % bgMelody.length];
+   bgStep++;
+
+   noteGain.gain.setValueAtTime(0,now);
+   noteGain.gain.linearRampToValueAtTime(0.08,now+0.03);
+   noteGain.gain.exponentialRampToValueAtTime(0.001,now+0.28);
+
+   osc.connect(noteGain);
+   noteGain.connect(bgGain);
+   osc.start(now);
+   osc.stop(now+0.3);
+  },320);
+ }catch(e){
+  console.log("Không bật được nhạc nền",e);
+ }
+}
+
+function stopBgMusic(){
+ if(bgTimer){clearInterval(bgTimer);bgTimer=null;}
+ if(bgCtx){bgCtx.close();bgCtx=null;}
+}
+
+function toggleBgMusic(){
+ bgMusicOn=!bgMusicOn;
+ let btn=document.getElementById("musicBtn");
+ if(bgMusicOn){
+  if(btn)btn.innerText="🔊 Nhạc nền: Bật";
+  startBgMusic();
+ }else{
+  if(btn)btn.innerText="🔇 Nhạc nền: Tắt";
+  stopBgMusic();
+ }
 }
 
 function playWinSound(){
